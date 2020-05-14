@@ -8,20 +8,18 @@ import axios from '../../axios-orders'
 import Spinner from '../../components/UI/Spinner/Spinner';
 import WithErrorHandler from '../../hoc/WithErrorHandler/WithErrorHandler'
 import {connect} from 'react-redux'
-import * as actionTypes from '../../store/actions'
-
+import * as actions from '../../store/actions/index'
 class BurgerBuilder extends Component {
     state = {
-        totalPrice : 4,
         purchasable : false,
         purchasing : false,
         loading : false
-
     };
     componentDidMount(){
         // axios.get('/ingredients.json').then((response)=>{
         //     this.setState({ingredients:response.data})
         // }).catch((error)=>console.log(error));
+        this.props.onIngredientInit();
     }
     updatePurchaseState = (ingredients)=>{
         ingredients = {
@@ -37,6 +35,7 @@ class BurgerBuilder extends Component {
     purchaseHandler = ()=> this.setState({purchasing:true});
     purchaseCancelHadler = ()=> this.setState({purchasing:false});
     purchaseContinueHandler = ()=>{
+        this.props.onPurchaseInit();
         this.props.history.push('/checkout');
     }
     render() {
@@ -44,7 +43,7 @@ class BurgerBuilder extends Component {
         for(let key in disabledInfo){
             disabledInfo[key] = disabledInfo[key] <=0
         }
-        let burger = <Spinner></Spinner>;
+        let burger = this.props.error ? <p>Ingredients cannot be loaded</p>:<Spinner></Spinner>;
         let orderSummary = <Spinner></Spinner>;
         if(this.props.ings){
             burger = <Aux>
@@ -73,15 +72,19 @@ class BurgerBuilder extends Component {
 
 const mapStateToProps = state => {
     return {
-        ings : state.ingredients,
-        price : state.totalPrice
+        ings : state.burgerBuilder.ingredients,
+        price : state.burgerBuilder.totalPrice,
+        error : state.burgerBuilder.error
     }
 }
 
 const mapDispatchToProps = dispatch => {
     return {
-        onIngredientAdd : (igName)=> dispatch({type: actionTypes.ADD_INGREDIENT, ingredientName : igName}),
-        onIngredientRemoved : (igName)=> dispatch({type: actionTypes.REMOVE_INGREDIENT, ingredientName : igName})
+        onIngredientAdd : (igName)=> dispatch(actions.addIngredient(igName)),
+        onIngredientRemoved : (igName)=> dispatch(actions.removeIngredient(igName)),
+        onIngredientInit : () => dispatch(actions.initIngredients()),
+        onFetchIngredientFailed : ()=> dispatch(actions.fetchIngredientsFailed()),
+        onPurchaseInit : ()=>dispatch(actions.purchaseBurgerInit())
     }
 }
 
